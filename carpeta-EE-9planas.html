@@ -379,7 +379,7 @@ const PLANAS = {
 };
 
 // ── SCRIPT URL ──
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzfpJDCnM1ZFDHUwv9R6aaauE9jaMtRZnZhLh9Ef0Gx44FhgTTYf34YEmOQcF1nEFA/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxQQkuXJBELze9O9XTRQ4osigfMbPZkJeW9005eP6AkA1yK4Paq9299MHXCfb_Bi-Jx/exec';
 
 // ── STATE ──
 let planaA = 1, planaB = 2;
@@ -667,11 +667,12 @@ document.getElementById('btnConfirm').addEventListener('click', () => {
   btnConfirm.disabled = true;
   btnConfirm.textContent = 'Enviando...';
 
-  fetch(SCRIPT_URL, {
-    method: 'POST',
-    mode: 'no-cors',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({hoja:'Eevee & Evoluciones', tipo:'pedido_items', items})
+  const payload = {hoja:'Eevee & Evoluciones', tipo:'pedido_items', items};
+  const url = SCRIPT_URL + '?data=' + encodeURIComponent(JSON.stringify(payload));
+
+  fetch(url, {
+    method: 'GET',
+    mode: 'no-cors'
   }).then(() => {
     btnConfirm.textContent = '✓ ¡Solicitud Enviada!';
     btnConfirm.style.background = '#4caf76';
