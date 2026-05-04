@@ -383,37 +383,14 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzfpJDCnM1ZFDHUwv9R6
 
 // ── STATE ──
 let planaA = 1, planaB = 2;
-const selected = new Map(); // key -> {card, plana, qty}
+const selected = new Map();
 
-// ── LOAD STOCK FROM SHEETS ──
-async function loadStockFromSheets() {
-  try {
-    const resp = await fetch(SCRIPT_URL);
-    const data = await resp.json();
-    if (data.status === 'ok' && data.cards) {
-      data.cards.forEach(c => {
-        Object.keys(PLANAS).forEach(p => {
-          PLANAS[p].cards.forEach(card => {
-            if (!card.empty && card.code === c.codigo) {
-              card.clp = parseInt(c.precio_clp) || card.clp;
-              card.stock = parseInt(c.stock) ?? 10;
-            }
-          });
-        });
-      });
-    }
-  } catch(err) {
-    console.log('Usando datos locales');
-  }
-  // Set default stock if not loaded
-  Object.keys(PLANAS).forEach(p => {
-    PLANAS[p].cards.forEach(card => {
-      if (!card.empty && card.stock === undefined) card.stock = 10;
-    });
+// Set default stock
+Object.keys(PLANAS).forEach(p => {
+  PLANAS[p].cards.forEach(card => {
+    if (!card.empty && card.stock === undefined) card.stock = 10;
   });
-  loadBinders();
-  renderCart();
-}
+});
 
 // ── PLANA NAVIGATION — PAIRS ──
 const PAIRS = [[1,2],[3,4],[5,6],[7,8],[9,9]];
