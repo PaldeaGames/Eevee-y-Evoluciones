@@ -379,7 +379,7 @@ const PLANAS = {
 };
 
 // ── SCRIPT URL ──
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx0y1P9d9vSuAwtqR_IV28hZFq3brdu5b5jb-ouwx4Q_vXr3tJqc2H_QRU3GkFEgp0/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyfjkLBlxidwMZjiYTnUGqfoi8Z0zWmRXPoLquLq3x5OH-aRdo7-nf20eKCjea6I0Zl/exec';
 
 // ── STATE ──
 let planaA = 1, planaB = 2;
@@ -770,8 +770,19 @@ function isTouchDevice(){return('ontouchstart' in window)||navigator.maxTouchPoi
 const hoverHint=document.getElementById('hoverHint');
 if(hoverHint){hoverHint.textContent=isTouchDevice()?'🟢 Toca un ítem de tu selección para verla destacada en la foto.':'🟢 Pasa el cursor sobre un ítem para verla destacada en la foto.';}
 
-// ── INIT ──
-loadStockFromSheets();
+// ── INIT — datos fijos, sin lectura desde Sheets ──
+// Para actualizar precios o stock, edita directamente los datos de PLANAS arriba
+// Los pedidos siguen llegando al Sheets normalmente
+
+// Set default stock
+Object.keys(PLANAS).forEach(p => {
+  PLANAS[p].cards.forEach(card => {
+    if (!card.empty && card.stock === undefined) card.stock = 10;
+  });
+});
+
+loadBinders();
+renderCart();
 </script>
 </body>
 </html>
