@@ -154,6 +154,11 @@
   .carta-item.selected { border-color: var(--green); background: #001a0a; }
   .carta-item.cart-highlight { border-color: var(--green-hi) !important; box-shadow: 0 0 16px #69f0ae55 !important; }
   .carta-item.agotada { opacity: 0.45; cursor: not-allowed; }
+  .carta-item.vacia { 
+    background: #100800; border: 2px dashed #2a1508;
+    opacity: 0.2; cursor: default; pointer-events: none;
+  }
+
 
   .carta-codigo { display: none; }
   .carta-nombre { font-size: 0.8rem; font-weight: 700; color: var(--text); line-height: 1.2; margin-bottom: 3px; }
@@ -571,14 +576,20 @@ function crearPlanaSection(numPlana, cartas) {
 
 // ══ Carta item ══
 function crearCartaItem(carta) {
-  const agotada  = Number(carta.stock) <= 0;
-  const selected = carrito.some(x => x.carta.codigo === carta.codigo && Number(x.carta.plana) === Number(carta.plana));
+  const vacia    = carta.estado === "Vacío" || carta.pokemon === "Vacío";
+  const agotada  = !vacia && Number(carta.stock) <= 0;
+  const selected = !vacia && carrito.some(x => x.carta.codigo === carta.codigo && Number(x.carta.plana) === Number(carta.plana));
   const rarKey   = (carta.rareza || "Normal").replace(/\s+/g, "-");
 
   const div = document.createElement("div");
-  div.className = "carta-item" + (agotada?" agotada":"") + (selected?" selected":"");
+  div.className = "carta-item" + (vacia?" vacia":"") + (agotada?" agotada":"") + (selected?" selected":"");
   div.id = "carta-" + carta.plana + "-" + carta.codigo;
-  if (!agotada) div.onclick = () => toggleCarta(carta);
+  if (!agotada && !vacia) div.onclick = () => toggleCarta(carta);
+
+  if (vacia) {
+    div.innerHTML = "";
+    return div;
+  }
 
   div.innerHTML = `
     ${agotada ? `<div class="agotado-badge">AGOTADO</div>` : ""}
