@@ -198,17 +198,20 @@
   }
   .cart-overlay.open { opacity: 1; pointer-events: all; }
   .cart-panel {
-    position: fixed; right: 0; top: 0; bottom: 0;
+    position: fixed; right: 0; top: 0;
     width: min(480px, 100vw);
+    height: 100dvh;
     background: var(--dark); border-left: 2px solid var(--brown-light);
     z-index: 301; display: flex; flex-direction: column;
     transform: translateX(100%); transition: transform 0.35s cubic-bezier(.4,0,.2,1);
+    overflow: hidden;
   }
   .cart-panel.open { transform: translateX(0); }
   .cart-top {
     padding: 18px 20px; border-bottom: 1px solid var(--border);
     display: flex; align-items: center; justify-content: space-between;
     background: linear-gradient(90deg, #5c3520, var(--dark));
+    flex-shrink: 0;
   }
   .cart-top h2 { font-family: 'Bangers', cursive; font-size: 1.4rem; color: var(--brown-light); letter-spacing: 1px; }
   .close-btn {
@@ -216,7 +219,44 @@
     cursor: pointer; width: 34px; height: 34px; border-radius: 50%; font-size: 1rem; transition: all 0.2s;
   }
   .close-btn:hover { border-color: var(--red); color: var(--red); }
-  .cart-items { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+  .cart-items {
+    flex: 1 1 0; min-height: 0;
+    overflow-y: auto; overflow-x: hidden;
+    padding: 6px 10px;
+    display: flex; flex-direction: column; gap: 0;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+  }
+  /* ── CART ITEM ROWS ── */
+  .ci-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 9px 12px; width: 100%; min-height: 42px;
+  }
+  .ci-qty {
+    font-size: 0.78rem; font-weight: 800; color: var(--brown-light);
+    min-width: 26px; flex-shrink: 0;
+  }
+  .ci-texto {
+    flex: 1; font-size: 0.78rem; color: var(--text);
+    line-height: 1.3; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis; min-width: 0;
+  }
+  .ci-precio {
+    font-size: 0.78rem; font-weight: 800; color: var(--brown-light);
+    flex-shrink: 0; margin-left: 6px;
+  }
+  .ci-remove {
+    background: transparent; border: none; color: var(--muted);
+    cursor: pointer; font-size: 0.85rem; padding: 2px 4px;
+    border-radius: 6px; transition: all 0.2s; flex-shrink: 0; line-height: 1;
+  }
+  .ci-remove:hover { color: var(--red); background: #ff000022; }
+  .cart-item-card { margin-bottom: 4px; flex-shrink: 0;
+    background: #2a1a0e; border: 1.5px solid #4a2e1a;
+    border-radius: 12px; overflow: hidden; transition: border-color 0.2s;
+  }
+  .cart-item-card:hover { border-color: var(--brown-light); }
   .cart-empty { text-align: center; color: var(--muted); padding: 40px 20px; }
   .cart-empty .empty-ring { font-size: 3rem; display: block; margin-bottom: 12px; opacity: 0.4; }
 
@@ -267,7 +307,7 @@
   .cart-item-subtotal { font-size: 0.9rem; font-weight: 800; color: var(--brown-light); }
 
   /* ── FORMULARIO ── */
-  .cart-form { padding: 14px 18px; border-top: 1px solid var(--border); background: var(--darker); }
+  .cart-form { padding: 14px 18px; border-top: 1px solid var(--border); background: var(--darker); flex-shrink: 0; }
   .cart-form h3 { font-size: 0.8rem; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
   .form-row { display: flex; gap: 8px; margin-bottom: 8px; }
   .form-input {
@@ -307,6 +347,25 @@
   .btn-confirmar:hover { transform: translateY(-2px); }
   .btn-confirmar:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
+
+  #progressWrap {
+    display: none; width: 100%; height: 6px;
+    background: #1a1a2e; border-radius: 3px;
+    overflow: hidden; margin-bottom: 10px;
+  }
+  #progressBar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--brown-light), #FFA000);
+    border-radius: 3px; width: 0%;
+    transition: width 0.3s ease;
+  }
+  @keyframes progressAuto {
+    0%   { width: 0%; }
+    20%  { width: 30%; }
+    50%  { width: 60%; }
+    80%  { width: 82%; }
+    100% { width: 90%; }
+  }
   /* ── TOAST ── */
   .toast {
     position: fixed; bottom: 30px; left: 50%;
@@ -406,7 +465,7 @@
 <div class="cart-panel" id="cartPanel">
   <div class="cart-top">
     <h2>🛒 Mi Carrito</h2>
-    <button class="close-btn" onclick="cerrarCarrito()">✕</button>
+    <button id="btnVaciar" onclick="vaciarCarrito()" style="background:transparent;border:none;color:#8888aa;font-size:0.75rem;font-weight:700;cursor:pointer;padding:4px 8px;border-radius:6px;font-family:inherit;">Eliminar todo</button>
   </div>
   <div class="cart-items" id="cartItems">
     <div class="cart-empty"><span class="empty-ring">◎</span>Tu carrito está vacío</div>
@@ -424,6 +483,7 @@
       <span class="cart-total-label">TOTAL</span>
       <span class="cart-total-valor" id="cartTotal">$0</span>
     </div>
+    <div id="progressWrap"><div id="progressBar"></div></div>
     <button class="btn-confirmar" id="btnConfirmar" onclick="confirmarPedido()">◎ CONFIRMAR PEDIDO</button>
   </div>
 </div>
@@ -450,7 +510,8 @@
 
 <script>
 // ══════════════════════════════════════════════════
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxTusis7qgEqP5wMpN6MTSL_TbksI3_i0zmb5T93Bn3vx_GmCc5AXfjxOjcM6UqLltIIA/exec";
+const CARPETA = "EE";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbymkq81nv85-kf3QIbjnkPfYyQwN6PZIn9r8GsJ7iVMYbgL5CtvLCADHc9c5CCXtMCl/exec";
 // ══════════════════════════════════════════════════
 
 let inventario = [];
@@ -495,7 +556,7 @@ function rarezaIcon(rareza) {
 // ══ Cargar inventario ══
 async function cargarInventario() {
   try {
-    const res  = await fetch(APPS_SCRIPT_URL);
+    const res  = await fetch(APPS_SCRIPT_URL + "?carpeta=" + CARPETA);
     const data = await res.json();
     inventario = data;
   } catch(e) {
@@ -634,41 +695,17 @@ function renderCarrito() {
     const c   = item.carta;
     const sub = c.precio_clp * item.cantidad;
     total += sub;
-
-    const { icon, bg } = rarezaIcon(c.rareza);
-    const rarKey = (c.rareza || "Normal").replace(/\s+/g, "-");
-
     const card = document.createElement("div");
     card.className = "cart-item-card";
     card.id = "cart-card-" + c.plana + "-" + c.codigo;
     card.addEventListener("mouseenter", () => highlightCarta(c.plana, c.codigo, true));
     card.addEventListener("mouseleave", () => highlightCarta(c.plana, c.codigo, false));
-
     card.innerHTML = `
-      <div class="cart-item-inner">
-        <div class="cart-thumb ${bg}">
-          <div class="cart-thumb-icon">${icon}</div>
-          <div class="cart-rareza rareza-${rarKey}" style="font-size:0.52rem;padding:2px 5px;border-radius:6px;font-weight:800;text-transform:uppercase;">${c.rareza}</div>
-          <div class="cart-thumb-plana">P${c.plana}</div>
-        </div>
-        <div class="cart-item-body">
-          <div class="cart-item-top">
-            <div>
-              <div class="cart-item-nombre">${c.pokemon}</div>
-              <div class="cart-item-detalle">${c.set} ${c.numero}</div>
-            </div>
-            <button class="cart-item-remove" onclick="quitarDelCarrito('${c.plana}','${c.codigo}')">✕</button>
-          </div>
-          <div class="cart-item-bottom">
-            <div class="qty-control">
-              <button class="qty-btn" onclick="cambiarCantidad('${c.plana}','${c.codigo}',-1)">−</button>
-              <span class="qty-num">${item.cantidad}</span>
-              <button class="qty-btn" onclick="cambiarCantidad('${c.plana}','${c.codigo}',1)">+</button>
-              <span class="cart-item-stock">/ ${c.stock}</span>
-            </div>
-            <span class="cart-item-subtotal">${fCLP(sub)}</span>
-          </div>
-        </div>
+      <div class="ci-row">
+        <span class="ci-qty">${item.cantidad}x</span>
+        <span class="ci-texto">${c.pokemon} ${c.numero} · ${c.set} · ${c.rareza} · P${c.plana}</span>
+        <span class="ci-precio">${fCLP(sub)}</span>
+        <button class="ci-remove" onclick="quitarDelCarrito('${c.plana}','${c.codigo}')">✕</button>
       </div>
     `;
     cont.appendChild(card);
@@ -701,6 +738,14 @@ function cambiarCantidad(plana, codigo, delta) {
   if (nuevo > Number(item.carta.stock)) { showToast("⚠️ Sin stock suficiente", "error"); return; }
   item.cantidad = nuevo;
   renderCarrito();
+}
+
+function vaciarCarrito() {
+  document.querySelectorAll(".carta-item.selected").forEach(el => el.classList.remove("selected"));
+  carrito = [];
+  renderCarrito();
+  actualizarCount();
+  renderPar(parActual);
 }
 
 function actualizarCount() {
@@ -799,22 +844,32 @@ async function confirmarPedido() {
   if (!instaRaw) { $("inputInsta").classList.add("error");  showToast("⚠️ Ingresa tu usuario de Instagram", "error"); return; }
   if (carrito.length===0) { showToast("⚠️ Tu carrito está vacío", "error"); return; }
 
-  const btn = $("btnConfirmar");
-  btn.disabled=true; btn.textContent="◎ Enviando...";
+  const btn  = $("btnConfirmar");
+  const wrap = $("progressWrap");
+  const bar  = $("progressBar");
+
+  btn.disabled = true;
+  btn.textContent = "◎ Enviando...";
+  wrap.style.display = "block";
+  bar.style.animation = "progressAuto 8s ease forwards";
 
   const pedido = {
+    carpeta: CARPETA,
     cliente, instagram,
-    items: carrito.map(x=>({
-      plana:x.carta.plana, codigo:x.carta.codigo,
-      pokemon:x.carta.pokemon, set:x.carta.set,
-      numero:x.carta.numero, rareza:x.carta.rareza,
-      precio_clp:x.carta.precio_clp, cantidad:x.cantidad
+    items: carrito.map(x => ({
+      p: String(x.carta.plana),
+      c: String(x.carta.codigo),
+      q: x.cantidad
     }))
   };
 
   try {
-    const res  = await fetch(APPS_SCRIPT_URL+"?data="+encodeURIComponent(JSON.stringify(pedido)));
+    const url = APPS_SCRIPT_URL + "?carpeta=" + CARPETA + "&data=" + encodeURIComponent(JSON.stringify(pedido));
+    const res  = await fetch(url);
     const data = await res.json();
+    bar.style.animation = "none";
+    bar.style.width = "100%";
+    setTimeout(() => { wrap.style.display = "none"; bar.style.animation = "none"; bar.style.width = "0%"; }, 400);
     if (data.success) {
       cerrarCarrito();
       $("successId").textContent = "ID: "+data.id+" — Total: "+fCLP(data.total);
@@ -822,6 +877,7 @@ async function confirmarPedido() {
       carrito=[]; actualizarCount();
     } else throw new Error(data.error||"Error desconocido");
   } catch(err) {
+    wrap.style.display = "none"; bar.style.animation = "none"; bar.style.width = "0%";
     showToast("❌ Error al enviar: "+err.message, "error");
   } finally {
     btn.disabled=false; btn.textContent="◎ CONFIRMAR PEDIDO";
