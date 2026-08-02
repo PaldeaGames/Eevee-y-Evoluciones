@@ -371,8 +371,8 @@ function numPK(x){return String(x||'').trim().split('/')[0].replace(/[^0-9A-Za-z
 function rarPK(r){return String(r||'').replace(/\//g,'-').replace(/\s+/g,'');}
 
 // Replica exacta de nombreArchivoImgPK_ del Apps Script
-function nombreArchivoImg(imgId,nombre,codSet,numero,multi,rareza){
-  var b=String(imgId).padStart(4,'0')+'_'+camelPK(nombre)+'_'+camelPK(codSet)+'_'+numPK(numero);
+function nombreArchivoImg(codInt,multi,rareza){
+  var b=String(codInt||'unknown').trim().replace(/[^a-zA-Z0-9\-]/g,'_');
   if(multi) b+='_'+rarPK(rareza);
   return b+'.jpg';
 }
@@ -390,13 +390,13 @@ function esBrillo(rareza){
 // (ej: TRT23 sin archivo usa la de TRT24; la unica diferencia visual
 //  entre variantes es el efecto de brillo, que es CSS).
 function imgCandidatos(r,rarezasHermanas){
-  var imgId=r[8], nombre=r[1], codSet=r[2], numero=r[3], rareza=r[4];
+  var codInt=r[5], rareza=r[4];
   var c=[];
-  c.push(IMG_BASE+nombreArchivoImg(imgId,nombre,codSet,numero,true,rareza));
-  c.push(IMG_BASE+nombreArchivoImg(imgId,nombre,codSet,numero,false,''));
-  c.push(IMG_BASE+nombreArchivoImg(imgId,nombre,codSet,numero,true,'NRML'));
+  c.push(IMG_BASE+nombreArchivoImg(codInt,true,rareza));
+  c.push(IMG_BASE+nombreArchivoImg(codInt,false,''));
+  c.push(IMG_BASE+nombreArchivoImg(codInt,true,'NRML'));
   (rarezasHermanas||[]).forEach(function(rn){
-    c.push(IMG_BASE+nombreArchivoImg(imgId,nombre,codSet,numero,true,rn));
+    c.push(IMG_BASE+nombreArchivoImg(codInt,true,rn));
   });
   var out=[];
   c.forEach(function(u){if(out.indexOf(u)<0)out.push(u);});
@@ -512,10 +512,9 @@ async function syncGAS(){
       var rareza=String(it.rareza||'').trim();
       var setNombre=String(it.set_nombre||'').trim()||codSet;
       var codInt=String(it.cod_int||'').trim();
-      var imgId=it.img_id;
       var multi=!!it.img_multi;
 
-      CARDS.push([uid,nombre,codSet,numero,rareza,codInt,setNombre,'',imgId,multi,String(it.categoria||'').trim()]);
+      CARDS.push([uid,nombre,codSet,numero,rareza,codInt,setNombre,'',codInt,multi,String(it.categoria||'').trim()]);
 
       IDIOMAS.forEach(function(idm){
         var lo=idm.toLowerCase();
@@ -530,14 +529,14 @@ async function syncGAS(){
       CARDS.forEach(function(c){if(c[4]&&RAREZAS.indexOf(c[4])<0)RAREZAS.push(c[4]);});
     }
 
-    // segunda pasada: rarezas hermanas por img_id -> cadena de imagenes
-    var porImg={};
+    // segunda pasada: rarezas hermanas por cod_int -> cadena de imagenes
+    var porCodInt={};
     CARDS.forEach(function(c){
-      if(!porImg[c[8]]) porImg[c[8]]=[];
-      if(porImg[c[8]].indexOf(c[4])<0) porImg[c[8]].push(c[4]);
+      if(!porCodInt[c[5]]) porCodInt[c[5]]=[];
+      if(porCodInt[c[5]].indexOf(c[4])<0) porCodInt[c[5]].push(c[4]);
     });
     CARDS.forEach(function(c){
-      var hermanas=(porImg[c[8]]||[]).filter(function(rn){return rn!==c[4];});
+      var hermanas=(porCodInt[c[5]]||[]).filter(function(rn){return rn!==c[4];});
       IMG_CAND[c[0]]=imgCandidatos(c,hermanas);
       IMGS[c[0]]=IMG_CAND[c[0]][0];
     });
